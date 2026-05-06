@@ -13,6 +13,7 @@ export default class AuthController {
             userAgent: req.get('User-Agent'),
         };
         const result = await this.authService.register(req.body, meta);
+        res.cookie('refreshToken', result.refreshToken, result.cookieOptions);
         return ApiResponse.created(res, 'User created successfully', result);
     });
     login = asyncHandler(async (req, res) => {

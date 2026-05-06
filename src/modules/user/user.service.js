@@ -9,6 +9,10 @@ export class UserService {
     }
 
     async createUser({ name, email, password, phone, role }) {
+        if (!name || !email || !password || !phone || !role) {
+            throw ApiError.badRequest('All fields are required');
+        }
+
         const existUserWithEmail = await this.userRepository.findByEmail(email);
         if (existUserWithEmail) {
             throw ApiError.badRequest('User already exist with this email');
@@ -38,6 +42,9 @@ export class UserService {
             role: roleDb._id,
         });
         return newUser;
+    }
+    async findById(id) {
+        return await this.userRepository.findById(id);
     }
     async findByEmail(email) {
         return await this.userRepository.findByEmailWithPassword(email);

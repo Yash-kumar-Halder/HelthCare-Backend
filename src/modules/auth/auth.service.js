@@ -53,6 +53,7 @@ export class AuthService {
         const { ipAddress = null, userAgent = null } = meta;
 
         const decoded = RefreshToken.verifyRefreshToken(refreshToken);
+
         const { sessionId } = decoded;
 
         const session = await this.sessionService.getSessionById(sessionId);
@@ -72,29 +73,67 @@ export class AuthService {
 
         if (!isValid) {
             session.isRevoked = true;
+
             await session.save();
+
             throw new Error('Refresh token reuse detected');
         }
 
+        /*
+         Populate user
+        */
+        const user = await this.userService.findById(session.user);
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        /*
+         Rotate refresh token
+        */
         const newRefreshToken = RefreshToken.generateRefreshToken(
-            { userId: session.user, sessionId },
+            {
+                userId: user._id,
+                sessionId,
+            },
             '7d',
         );
 
+        /*
+         Generate new access token
+        */
         const newAccessToken = AccessToken.generateAccessToken(
-            { _id: session.user },
+            {
+                _id: user._id,
+                email: user.email,
+                role: user.role,
+            },
             '15m',
         );
 
+        /*
+         Update session
+        */
         session.refreshTokenHash = await Hash.hash(newRefreshToken);
+
         session.tokenExpireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
         session.ipAddress = ipAddress;
+
         session.userAgent = userAgent;
 
         await session.save();
 
         return {
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            },
+
             accessToken: newAccessToken,
+
             refreshToken: newRefreshToken,
         };
     }

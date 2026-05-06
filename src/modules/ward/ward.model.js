@@ -29,7 +29,5 @@ const wardSchema = new mongoose.Schema(
     { timestamps: true },
 );
 
-wardSchema.index({ code: 1 });
-
 export const WardModel =
     mongoose.models.Ward || mongoose.model('Ward', wardSchema);
