@@ -6,7 +6,6 @@ const roomSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Ward',
             required: true,
-            index: true,
         },
         roomNumber: {
             type: String,

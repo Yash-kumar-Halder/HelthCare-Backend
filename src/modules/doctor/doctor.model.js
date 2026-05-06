@@ -47,7 +47,5 @@ const doctorSchema = new mongoose.Schema(
     { timestamps: true },
 );
 
-doctorSchema.index({ licenseId: 1 });
-
 export const DoctorModel =
     mongoose.models.Doctor || mongoose.model('Doctor', doctorSchema);

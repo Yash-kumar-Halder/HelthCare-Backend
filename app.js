@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import AuthRoutes from './src/modules/auth/auth.route.js';
 import WardRoutes from './src/modules/ward/ward.route.js';
 import RoomRoutes from './src/modules/room/room.route.js';
@@ -12,6 +13,15 @@ import cookieParser from 'cookie-parser';
 
 dotenv.config();
 const app = express();
+
+const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+
+app.use(
+    cors({
+        origin: allowedOrigins,
+        credentials: true,
+    }),
+);
 
 app.use(express.json());
 app.use(cookieParser());
