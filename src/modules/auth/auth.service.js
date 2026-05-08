@@ -21,7 +21,9 @@ export class AuthService {
         const { ipAddress = null, userAgent = null } = meta;
 
         // 1. Find user
-        const user = await this.userService.findByEmail(email);
+        const user = await this.userService.findByEmail(email, {
+            populate: ['Role'],
+        });
         if (!user) {
             throw new Error('Invalid credentials');
         }
@@ -82,7 +84,11 @@ export class AuthService {
         /*
          Populate user
         */
-        const user = await this.userService.findById(session.user);
+        const user = await this.userService.findById(session.user, {
+            populate: ['Role'],
+        });
+
+        console.log('user from refresh token end-point: ', user);
 
         if (!user) {
             throw new Error('User not found');
@@ -105,8 +111,11 @@ export class AuthService {
         const newAccessToken = AccessToken.generateAccessToken(
             {
                 _id: user._id,
+                name: user.name,
                 email: user.email,
-                role: user.role,
+                phone: user.phone,
+                role: user.role.name,
+                sessionId: session._id,
             },
             '15m',
         );
@@ -172,14 +181,14 @@ export class AuthService {
             name: user.name,
             email: user.email,
             phone: user.phone,
-            role: user.role,
+            role: user.role.name,
             sessionId: session._id,
         };
 
         const accessToken = AccessToken.generateAccessToken(payload, '15m');
 
         return {
-            user: new UserResponseDTO(user),
+            user: user,
             accessToken,
             refreshToken,
             cookieOptions: {

@@ -1,42 +1,82 @@
 import { ApiError } from '../../common/utils/api/api-error.js';
 
 export class DoctorService {
-    constructor(doctorRepository) {
+    constructor(doctorRepository, userRepository) {
         this.doctorRepository = doctorRepository;
+        this.userRepository = userRepository;
     }
 
     async createDoctor(body) {
         const exists = await this.doctorRepository.findOne({
             licenseId: body.licenseId.trim(),
         });
+
+        console.log('User id: ', body.userId);
+
         if (exists) {
             throw ApiError.badRequest(
                 'Doctor with this license id already exists',
             );
         }
 
-        return this.doctorRepository.create({
-            firstName: body.firstName.trim(),
-            lastName: body.lastName.trim(),
+        const alreadyCreated = await this.doctorRepository.findOne({
+            userId: body.userId,
+        });
+
+        if (alreadyCreated) {
+            throw ApiError.badRequest(
+                'Doctor profile already exists for this user',
+            );
+        }
+
+        const doctor = await this.doctorRepository.create({
+            userId: body.userId,
+
             department: body.department.trim(),
+
+            specialization: body.specialization.trim(),
+
             licenseId: body.licenseId.trim(),
-            email: body.email?.trim().toLowerCase() ?? '',
-            phone: body.phone?.trim() ?? '',
+
+            consultationFee: Number(body.consultationFee),
+
+            experience: Number(body.experience),
+
+            qualifications: body.qualifications,
+
+            gender: body.gender,
+
             status: body.status ?? 'ACTIVE',
         });
+
+        await this.userRepository.updateById(body.userId, {
+            isRoleProfileCreated: true,
+        });
+
+        return doctor;
     }
 
     listDoctors(query = {}) {
         const filter = {};
+
+        // Status filter
         if (query.status) {
             filter.status = query.status;
         }
+
+        // Department filter
         if (query.department) {
             filter.department = new RegExp(
                 query.department.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
                 'i',
             );
         }
+
+        // Verification filter
+        if (query.isVerified !== undefined) {
+            filter.isVerified = query.isVerified === 'true';
+        }
+
         return this.doctorRepository.findAll(filter);
     }
 
@@ -87,5 +127,16 @@ export class DoctorService {
     async deleteDoctor(id) {
         await this.getDoctorById(id);
         return this.doctorRepository.deleteById(id);
+    }
+
+    async approveDoctor(id) {
+        // console.log('Doctor id for approve:', id);
+        const doctor = await this.doctorRepository.approveById(id);
+
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
+
+        return doctor;
     }
 }

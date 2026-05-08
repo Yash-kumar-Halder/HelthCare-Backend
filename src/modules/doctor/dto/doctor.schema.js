@@ -2,12 +2,35 @@ import { z } from 'zod';
 import { objectIdSchema } from '../../../common/utils/zod/object-id.schema.js';
 
 export const createDoctorBodySchema = z.object({
-    firstName: z.string().min(1).max(80),
-    lastName: z.string().min(1).max(80),
-    department: z.string().min(2).max(120),
-    licenseId: z.string().min(2).max(64),
-    email: z.union([z.string().email().max(120), z.literal('')]).optional(),
-    phone: z.string().max(20).optional().or(z.literal('')),
+    department: z.enum([
+        'Cardiology',
+        'Neurology',
+        'Orthopedics',
+        'Pediatrics',
+        'General Medicine',
+        'Dermatology',
+        'ENT',
+    ]),
+
+    specialization: z.string().trim().min(2).max(120),
+
+    consultationFee: z.coerce
+        .number()
+        .min(0, 'Consultation fee cannot be negative'),
+
+    experience: z.coerce
+        .number()
+        .min(0, 'Experience cannot be negative')
+        .max(60, 'Experience seems invalid'),
+
+    qualifications: z
+        .array(z.string().trim().min(1))
+        .min(1, 'At least one qualification is required'),
+
+    licenseId: z.string().trim().min(2).max(64),
+
+    gender: z.enum(['Male', 'Female']),
+
     status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
@@ -19,5 +42,8 @@ export const doctorIdParamSchema = z.object({
 
 export const listDoctorsQuerySchema = z.object({
     status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+
     department: z.string().max(120).optional(),
+
+    isVerified: z.enum(['true', 'false']).optional(),
 });

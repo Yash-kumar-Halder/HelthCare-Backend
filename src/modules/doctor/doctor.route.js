@@ -8,6 +8,7 @@ import {
     listDoctorsQuerySchema,
     updateDoctorBodySchema,
 } from './dto/doctor.schema.js';
+import { authorize } from '../../common/middleware/authorize.js';
 
 const router = express.Router();
 
@@ -26,8 +27,10 @@ router.post(
     '/',
     requireAuth,
     validateRequest({ body: createDoctorBodySchema }),
+    authorize('DOCTOR'),
     doctorController.create,
 );
+
 router.patch(
     '/:doctorId',
     requireAuth,
@@ -40,8 +43,16 @@ router.patch(
 router.delete(
     '/:doctorId',
     requireAuth,
+    authorize('ADMIN', 'DOCTOR'),
     validateRequest({ params: doctorIdParamSchema }),
     doctorController.remove,
+);
+
+router.patch(
+    '/:doctorId/approve',
+    requireAuth,
+    validateRequest({ params: doctorIdParamSchema }),
+    doctorController.approveDoctor,
 );
 
 export default router;

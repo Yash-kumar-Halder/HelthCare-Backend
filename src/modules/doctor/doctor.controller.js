@@ -7,7 +7,13 @@ export default class DoctorController {
     }
 
     create = asyncHandler(async (req, res) => {
-        const doctor = await this.doctorService.createDoctor(req.body);
+        const doctor = await this.doctorService.createDoctor({
+            ...req.body,
+            userId: req.auth.userId,
+        });
+
+        console.log('Doctor controller-userId: ', req.auth.userId);
+
         return ApiResponse.created(res, 'Doctor created successfully', doctor);
     });
 
@@ -34,5 +40,17 @@ export default class DoctorController {
     remove = asyncHandler(async (req, res) => {
         await this.doctorService.deleteDoctor(req.params.doctorId);
         return ApiResponse.ok(res, 'Doctor deleted successfully');
+    });
+
+    approveDoctor = asyncHandler(async (req, res) => {
+        const doctor = await this.doctorService.approveDoctor(
+            req.params.doctorId,
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Doctor approved successfully',
+            data: doctor,
+        });
     });
 }
