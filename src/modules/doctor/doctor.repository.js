@@ -21,12 +21,26 @@ export class DoctorRepository {
 
     updateById(id, update) {
         return DoctorModel.findByIdAndUpdate(id, update, {
-            new: true,
+            returnDocument: 'after',
             runValidators: true,
         }).lean();
     }
 
     deleteById(id) {
         return DoctorModel.findByIdAndDelete(id).lean();
+    }
+
+    async approveById(id) {
+        const data = await DoctorModel.findByIdAndUpdate(
+            id,
+            {
+                isVerified: true,
+            },
+            {
+                returnDocument: 'after',
+            },
+        ).lean();
+        console.log(data);
+        return data;
     }
 }

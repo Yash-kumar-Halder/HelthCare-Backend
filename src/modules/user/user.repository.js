@@ -5,19 +5,64 @@ export class UserRepository {
         return await UserModel.create(userData);
     }
 
-    async findById(id) {
-        return await UserModel.findById(id);
+    async findById(id, options = {}) {
+        const { populate = [], select = '' } = options;
+
+        let query = UserModel.findById(id);
+
+        if (select) {
+            query = query.select(select);
+        }
+
+        populate.forEach((field) => {
+            query = query.populate(field);
+        });
+
+        return await query;
     }
 
-    async findByEmail(email) {
-        return await UserModel.findOne({ email });
+    async findByEmail(email, options = {}) {
+        const { populate = [], select = '' } = options;
+
+        let query = UserModel.findOne({ email });
+
+        if (select) {
+            query = query.select(select);
+        }
+
+        populate.forEach((field) => {
+            query = query.populate(field);
+        });
+
+        return await query;
     }
 
     async findByEmailWithPassword(email) {
-        return await UserModel.findOne({ email }).select('+password');
+        return await UserModel.findOne({ email })
+            .select('+password')
+            .populate('role');
     }
 
-    async findByPhone(phone) {
-        return await UserModel.findOne({ phone });
+    async findByPhone(phone, options = {}) {
+        const { populate = [], select = '' } = options;
+
+        let query = UserModel.findOne({ phone });
+
+        if (select) {
+            query = query.select(select);
+        }
+
+        populate.forEach((field) => {
+            query = query.populate(field);
+        });
+
+        return await query;
+    }
+
+    async updateById(id, update) {
+        return await UserModel.findByIdAndUpdate(id, update, {
+            new: true,
+            runValidators: true,
+        });
     }
 }

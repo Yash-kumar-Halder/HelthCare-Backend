@@ -8,7 +8,8 @@ import { ApiError } from '../utils/api/api-error.js';
 export function requireAuth(req, _res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
-        return next(ApiError.unauthorized('Access token required'));
+        console.log('no access token');
+        return next(ApiError.unauthorized('Access token requireddddd'));
     }
 
     const token = authHeader.slice(7).trim();

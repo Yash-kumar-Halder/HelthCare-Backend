@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import AuthRoutes from './src/modules/auth/auth.route.js';
+import UserRoutes from './src/modules/user/user.route.js';
 import WardRoutes from './src/modules/ward/ward.route.js';
 import RoomRoutes from './src/modules/room/room.route.js';
 import BedRoutes from './src/modules/bed/bed.route.js';
@@ -35,6 +36,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', AuthRoutes);
+app.use('/api/users', UserRoutes);
 app.use('/api/wards', WardRoutes);
 app.use('/api/rooms', RoomRoutes);
 app.use('/api/beds', BedRoutes);

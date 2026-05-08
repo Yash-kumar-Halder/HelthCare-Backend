@@ -44,7 +44,7 @@ export class UserService {
         return newUser;
     }
     async findById(id) {
-        return await this.userRepository.findById(id);
+        return await this.userRepository.findById(id, { populate: ['role'] });
     }
     async findByEmail(email) {
         return await this.userRepository.findByEmailWithPassword(email);
