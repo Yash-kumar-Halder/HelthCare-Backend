@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        profileId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Doctor',
+        },
         status: {
             type: String,
             enum: ['ACTIVE', 'SUSPENDED'],
