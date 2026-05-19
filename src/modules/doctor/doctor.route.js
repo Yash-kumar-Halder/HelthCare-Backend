@@ -51,6 +51,7 @@ router.delete(
 router.patch(
     '/:doctorId/approve',
     requireAuth,
+    authorize('ADMIN', 'DOCTOR'),
     validateRequest({ params: doctorIdParamSchema }),
     doctorController.approveDoctor,
 );

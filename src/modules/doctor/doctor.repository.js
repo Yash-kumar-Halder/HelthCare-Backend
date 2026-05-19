@@ -5,25 +5,46 @@ export class DoctorRepository {
         return DoctorModel.create(data);
     }
 
-    findById(id) {
-        return DoctorModel.findById(id).lean();
+    async findById(id, options = {}) {
+        const { populate = [], select = '' } = options;
+
+        let query = DoctorModel.findById(id);
+
+        if (select) {
+            query = query.select(select);
+        }
+
+        populate.forEach((field) => {
+            query = query.populate(field);
+        });
+
+        return await query.lean();
     }
 
-    findAll(filter = {}) {
-        return DoctorModel.find(filter)
-            .sort({ lastName: 1, firstName: 1 })
-            .lean();
+    findAll(filter = {}, options = {}) {
+        const query = DoctorModel.find(filter).sort({
+            createdAt: -1,
+        });
+
+        if (options.populate) {
+            options.populate.forEach((field) => {
+                query.populate(field);
+            });
+        }
+
+        return query.lean();
     }
 
     findOne(filter) {
         return DoctorModel.findOne(filter).lean();
     }
 
-    updateById(id, update) {
-        return DoctorModel.findByIdAndUpdate(id, update, {
-            returnDocument: 'after',
+    async updateById(id, update, options = {}) {
+        return await DoctorModel.findByIdAndUpdate(id, update, {
+            new: true,
             runValidators: true,
-        }).lean();
+            ...options,
+        });
     }
 
     deleteById(id) {

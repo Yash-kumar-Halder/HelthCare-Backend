@@ -3,6 +3,7 @@ import { ApiError } from '../../common/utils/api/api-error.js';
 export class DoctorService {
     constructor(doctorRepository, userRepository) {
         this.doctorRepository = doctorRepository;
+
         this.userRepository = userRepository;
     }
 
@@ -10,8 +11,6 @@ export class DoctorService {
         const exists = await this.doctorRepository.findOne({
             licenseId: body.licenseId.trim(),
         });
-
-        console.log('User id: ', body.userId);
 
         if (exists) {
             throw ApiError.badRequest(
@@ -29,6 +28,39 @@ export class DoctorService {
             );
         }
 
+        // Validate consultation fee
+        const consultationFee = Number(body.consultationFee);
+
+        if (Number.isNaN(consultationFee)) {
+            throw ApiError.badRequest(
+                'Consultation fee must be a valid number',
+            );
+        }
+
+        if (consultationFee < 0) {
+            throw ApiError.badRequest('Consultation fee cannot be negative');
+        }
+
+        // Validate experience
+        const experience = Number(body.experience);
+
+        if (Number.isNaN(experience)) {
+            throw ApiError.badRequest('Experience must be a valid number');
+        }
+
+        if (experience < 0 || experience > 60) {
+            throw ApiError.badRequest('Experience must be between 0 and 60');
+        }
+
+        // Validate qualifications
+        const qualifications = body.qualifications
+            ?.map((item) => item.trim())
+            ?.filter(Boolean);
+
+        if (!qualifications?.length) {
+            throw ApiError.badRequest('At least one qualification is required');
+        }
+
         const doctor = await this.doctorRepository.create({
             userId: body.userId,
 
@@ -36,13 +68,13 @@ export class DoctorService {
 
             specialization: body.specialization.trim(),
 
+            consultationFee,
+
+            experience,
+
+            qualifications,
+
             licenseId: body.licenseId.trim(),
-
-            consultationFee: Number(body.consultationFee),
-
-            experience: Number(body.experience),
-
-            qualifications: body.qualifications,
 
             gender: body.gender,
 
@@ -51,12 +83,14 @@ export class DoctorService {
 
         await this.userRepository.updateById(body.userId, {
             isRoleProfileCreated: true,
+
+            profileId: doctor._id,
         });
 
         return doctor;
     }
 
-    listDoctors(query = {}) {
+    async listDoctors(query = {}) {
         const filter = {};
 
         // Status filter
@@ -77,64 +111,116 @@ export class DoctorService {
             filter.isVerified = query.isVerified === 'true';
         }
 
-        return this.doctorRepository.findAll(filter);
+        return this.doctorRepository.findAll(filter, { populate: ['userId'] });
     }
 
     async getDoctorById(id) {
-        const doctor = await this.doctorRepository.findById(id);
+        const doctor = await this.doctorRepository.findById(id, {
+            populate: ['userId'],
+        });
+
         if (!doctor) {
             throw ApiError.notFound('Doctor not found');
         }
+
         return doctor;
     }
 
     async updateDoctor(id, body) {
         await this.getDoctorById(id);
+
         const update = {};
-        if (body.firstName !== undefined) {
-            update.firstName = body.firstName.trim();
-        }
-        if (body.lastName !== undefined) {
-            update.lastName = body.lastName.trim();
-        }
+
+        // Department
         if (body.department !== undefined) {
             update.department = body.department.trim();
         }
+
+        // Specialization
+        if (body.specialization !== undefined) {
+            update.specialization = body.specialization.trim();
+        }
+
+        // Consultation Fee
+        if (body.consultationFee !== undefined) {
+            update.consultationFee = Number(body.consultationFee);
+        }
+
+        // Experience
+        if (body.experience !== undefined) {
+            update.experience = Number(body.experience);
+        }
+
+        // Qualifications
+        if (body.qualifications !== undefined) {
+            update.qualifications = body.qualifications
+                .map((item) => item.trim())
+                .filter(Boolean);
+
+            if (update.qualifications.length === 0) {
+                throw ApiError.badRequest(
+                    'At least one qualification is required',
+                );
+            }
+        }
+
+        // License ID
         if (body.licenseId !== undefined) {
-            const lid = body.licenseId.trim();
+            const licenseId = body.licenseId.trim();
+
             const clash = await this.doctorRepository.findOne({
-                licenseId: lid,
+                licenseId,
                 _id: { $ne: id },
             });
+
             if (clash) {
                 throw ApiError.badRequest('License id already in use');
             }
-            update.licenseId = lid;
+
+            update.licenseId = licenseId;
         }
-        if (body.email !== undefined) {
-            update.email = body.email?.trim().toLowerCase() ?? '';
+
+        // Gender
+        if (body.gender !== undefined) {
+            update.gender = body.gender;
         }
-        if (body.phone !== undefined) {
-            update.phone = body.phone?.trim() ?? '';
-        }
+
+        // Status
         if (body.status !== undefined) {
             update.status = body.status;
         }
 
-        return this.doctorRepository.updateById(id, { $set: update });
+        const updatedDoctor = await this.doctorRepository.updateById(
+            id,
+            {
+                $set: update,
+            },
+            {
+                new: true,
+                runValidators: true,
+            },
+        );
+
+        return updatedDoctor;
     }
 
     async deleteDoctor(id) {
-        await this.getDoctorById(id);
-        return this.doctorRepository.deleteById(id);
+        const doctor = await this.getDoctorById(id);
+
+        await this.doctorRepository.deleteById(id);
+
+        await this.userRepository.updateById(doctor.userId, {
+            isRoleProfileCreated: false,
+        });
+
+        return true;
     }
 
     async approveDoctor(id) {
-        // console.log('Doctor id for approve:', id);
         const doctor = await this.doctorRepository.approveById(id);
 
         if (!doctor) {
-            throw new Error('Doctor not found');
+            throw ApiError.notFound('Doctor not found');
         }
 
         return doctor;

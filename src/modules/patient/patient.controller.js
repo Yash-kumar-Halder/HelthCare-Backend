@@ -8,6 +8,7 @@ export default class PatientController {
 
     create = asyncHandler(async (req, res) => {
         const patient = await this.patientService.createPatient(req.body);
+
         return ApiResponse.created(
             res,
             'Patient created successfully',
@@ -15,10 +16,17 @@ export default class PatientController {
         );
     });
 
+    list = asyncHandler(async (req, res) => {
+        const patients = await this.patientService.listPatients(req.query);
+
+        return ApiResponse.ok(res, 'Patients fetched successfully', patients);
+    });
+
     getById = asyncHandler(async (req, res) => {
         const patient = await this.patientService.getPatientById(
             req.params.patientId,
         );
+
         return ApiResponse.ok(res, 'Patient fetched successfully', patient);
     });
 
@@ -27,11 +35,13 @@ export default class PatientController {
             req.params.patientId,
             req.body,
         );
+
         return ApiResponse.ok(res, 'Patient updated successfully', patient);
     });
 
     remove = asyncHandler(async (req, res) => {
         await this.patientService.deletePatient(req.params.patientId);
+
         return ApiResponse.ok(res, 'Patient deleted successfully');
     });
 }

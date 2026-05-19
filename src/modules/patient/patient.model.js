@@ -2,60 +2,79 @@ import mongoose from 'mongoose';
 
 const patientSchema = new mongoose.Schema(
     {
-        firstName: {
-            type: String,
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
             required: true,
-            trim: true,
-            maxlength: [80, 'First name max 80 characters'],
+            unique: true,
         },
-        lastName: {
-            type: String,
+
+        age: {
+            type: Number,
             required: true,
-            trim: true,
-            maxlength: [80, 'Last name max 80 characters'],
+            min: [0, 'Age cannot be negative'],
+            max: [120, 'Invalid age'],
         },
-        phone: {
-            type: String,
-            trim: true,
-            maxlength: [20, 'Phone max 20 characters'],
-        },
-        dateOfBirth: {
-            type: Date,
-            default: null,
-        },
+
         gender: {
             type: String,
-            enum: ['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'],
-            default: 'UNKNOWN',
+            enum: ['Male', 'Female', 'Other'],
+            required: true,
         },
+
+        bloodGroup: {
+            type: String,
+            enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+        },
+
+        height: {
+            type: Number,
+            min: [0, 'Height cannot be negative'],
+        },
+
+        weight: {
+            type: Number,
+            min: [0, 'Weight cannot be negative'],
+        },
+
+        allergies: [
+            {
+                type: String,
+                trim: true,
+            },
+        ],
+
+        chronicDiseases: [
+            {
+                type: String,
+                trim: true,
+            },
+        ],
+
+        emergencyContact: {
+            name: {
+                type: String,
+                trim: true,
+            },
+
+            phone: {
+                type: String,
+                trim: true,
+            },
+
+            relation: {
+                type: String,
+                trim: true,
+            },
+        },
+
         address: {
             type: String,
             trim: true,
-            maxlength: [500, 'Address max 500 characters'],
-            default: '',
-        },
-        medicalRecordNumber: {
-            type: String,
-            trim: true,
-            sparse: true,
-            unique: true,
-            maxlength: [40, 'MRN max 40 characters'],
-        },
-        linkedUserId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            default: null,
-        },
-        status: {
-            type: String,
-            enum: ['ACTIVE', 'ARCHIVED'],
-            default: 'ACTIVE',
         },
     },
     { timestamps: true },
 );
-
-patientSchema.index({ phone: 1 });
 
 export const PatientModel =
     mongoose.models.Patient || mongoose.model('Patient', patientSchema);

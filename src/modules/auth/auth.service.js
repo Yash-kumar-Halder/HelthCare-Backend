@@ -88,8 +88,6 @@ export class AuthService {
             populate: ['Role'],
         });
 
-        console.log('user from refresh token end-point: ', user);
-
         if (!user) {
             throw new Error('User not found');
         }

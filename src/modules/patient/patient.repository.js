@@ -5,8 +5,16 @@ export class PatientRepository {
         return PatientModel.create(data);
     }
 
-    findById(id) {
-        return PatientModel.findById(id).lean();
+    findById(id, options = {}) {
+        const query = PatientModel.findById(id);
+
+        if (options.populate) {
+            options.populate.forEach((field) => {
+                query.populate(field);
+            });
+        }
+
+        return query.lean();
     }
 
     findAll(filter = {}) {
