@@ -18,6 +18,8 @@ router.post(
     patientController.create,
 );
 
+router.get('/', requireAuth, patientController.list);
+
 router.get(
     '/:patientId/admissions',
     requireAuth,

@@ -17,10 +17,19 @@ export class PatientRepository {
         return query.lean();
     }
 
-    findAll(filter = {}) {
-        return PatientModel.find(filter)
-            .sort({ lastName: 1, firstName: 1 })
-            .lean();
+    findAll(filter = {}, options = {}) {
+        const query = PatientModel.find(filter).sort({
+            lastName: 1,
+            firstName: 1,
+        });
+
+        if (options.populate) {
+            options.populate.forEach((field) => {
+                query.populate(field);
+            });
+        }
+
+        return query.lean();
     }
 
     findOne(filter) {
