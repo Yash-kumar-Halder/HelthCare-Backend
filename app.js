@@ -9,6 +9,7 @@ import BedRoutes from './src/modules/bed/bed.route.js';
 import PatientRoutes from './src/modules/patient/patient.route.js';
 import DoctorRoutes from './src/modules/doctor/doctor.route.js';
 import AdmissionRoutes from './src/modules/admission/admission.route.js';
+import AppointmentRoutes from './src/modules/appoinment/appointment.route.js';
 import errorHandler from './src/common/middleware/error-handler.js';
 import cookieParser from 'cookie-parser';
 
@@ -43,6 +44,7 @@ app.use('/api/beds', BedRoutes);
 app.use('/api/patients', PatientRoutes);
 app.use('/api/doctors', DoctorRoutes);
 app.use('/api/admissions', AdmissionRoutes);
+app.use('/api/appointments', AppointmentRoutes);
 
 app.use(errorHandler);
 
