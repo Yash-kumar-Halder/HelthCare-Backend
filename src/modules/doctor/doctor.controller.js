@@ -88,4 +88,20 @@ export default class DoctorController {
             data: doctor,
         });
     });
+    getDoctorSlotsByDate = asyncHandler(async (req, res) => {
+        const { doctorId } = req.params;
+
+        const { date } = req.query;
+
+        const slots = await this.doctorService.getDoctorSlotsByDate(
+            doctorId,
+            date,
+        );
+
+        return ApiResponse.ok(
+            res,
+            'Available slots fetched successfully',
+            slots,
+        );
+    });
 }

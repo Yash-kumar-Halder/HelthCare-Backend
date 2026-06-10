@@ -3,6 +3,7 @@ import { doctorController } from './doctor.module.js';
 import { requireAuth } from '../../common/middleware/require-auth.js';
 import { validateRequest } from '../../common/middleware/validate-request.js';
 import {
+    appointmentDateQuerySchema,
     createDoctorBodySchema,
     doctorIdParamSchema,
     listDoctorsQuerySchema,
@@ -54,6 +55,17 @@ router.patch(
     authorize('ADMIN', 'DOCTOR'),
     validateRequest({ params: doctorIdParamSchema }),
     doctorController.approveDoctor,
+);
+
+router.get(
+    '/:doctorId/slots',
+    // requireAuth,
+    // authorize('ADMIN', 'DOCTOR', 'PATIENT'),
+    validateRequest({
+        params: doctorIdParamSchema,
+        query: appointmentDateQuerySchema,
+    }),
+    doctorController.getDoctorSlotsByDate,
 );
 
 export default router;

@@ -40,6 +40,10 @@ export const doctorIdParamSchema = z.object({
     doctorId: objectIdSchema,
 });
 
+export const appointmentDateQuerySchema = z.object({
+    date: z.string().min(1),
+});
+
 export const listDoctorsQuerySchema = z.object({
     status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 

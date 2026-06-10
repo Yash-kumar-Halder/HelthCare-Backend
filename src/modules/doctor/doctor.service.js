@@ -1,10 +1,11 @@
 import { ApiError } from '../../common/utils/api/api-error.js';
+import { AppointmentRepository } from '../appoinment/appointment.repository.js';
 
 export class DoctorService {
-    constructor(doctorRepository, userRepository) {
+    constructor(doctorRepository, userRepository, appointmentRepository) {
         this.doctorRepository = doctorRepository;
-
         this.userRepository = userRepository;
+        this.appointmentRepository = appointmentRepository;
     }
 
     async createDoctor(body) {
@@ -111,7 +112,9 @@ export class DoctorService {
             filter.isVerified = query.isVerified === 'true';
         }
 
-        return this.doctorRepository.findAll(filter, { populate: ['userId'] });
+        return await this.doctorRepository.findAll(filter, {
+            populate: ['userId'],
+        });
     }
 
     async getDoctorById(id) {
@@ -224,5 +227,76 @@ export class DoctorService {
         }
 
         return doctor;
+    }
+
+    async getDoctorSlotsByDate(doctorId, appointmentDate) {
+        // Verify doctor exists
+        const doctor = await this.doctorRepository.findById(doctorId);
+        console.log(doctor);
+
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
+
+        // Verify doctor is active
+        if (doctor.status !== 'ACTIVE') {
+            throw new Error('Doctor is not active');
+        }
+
+        // Parse date
+        const parsedAppointmentDate = new Date(appointmentDate);
+
+        if (Number.isNaN(parsedAppointmentDate.getTime())) {
+            throw new Error('Invalid appointment date');
+        }
+
+        // Remove time part
+        parsedAppointmentDate.setHours(0, 0, 0, 0);
+
+        // Example static slots
+        // Later you can move this into doctor model
+        const allSlots = [
+            {
+                startTime: '10:00',
+                endTime: '10:30',
+            },
+            {
+                startTime: '10:30',
+                endTime: '11:00',
+            },
+            {
+                startTime: '11:00',
+                endTime: '11:30',
+            },
+            {
+                startTime: '11:30',
+                endTime: '12:00',
+            },
+        ];
+
+        // Get booked appointments
+        const bookedAppointments = await this.appointmentRepository.find({
+            doctorId,
+            appointmentDate: parsedAppointmentDate,
+            status: {
+                $in: ['PENDING', 'ACCEPTED'],
+            },
+        });
+
+        // Generate slots with booking status
+        const slots = allSlots.map((slot) => {
+            const booked = bookedAppointments.some(
+                (appointment) =>
+                    appointment.slot.startTime === slot.startTime &&
+                    appointment.slot.endTime === slot.endTime,
+            );
+
+            return {
+                ...slot,
+                booked,
+            };
+        });
+
+        return slots;
     }
 }
