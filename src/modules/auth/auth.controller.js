@@ -54,6 +54,18 @@ export default class AuthController {
 
         return ApiResponse.ok(res, 'Logout successful');
     });
+    verifyEmail = asyncHandler(async (req, res) => {
+        await this.authService.verifyEmail(req.body.token);
+
+        return ApiResponse.ok(res, 'Email verified successfully');
+    });
+
+    resendVerification = asyncHandler(async (req, res) => {
+        await this.authService.resendVerification(req.auth.userId);
+
+        return ApiResponse.ok(res, 'Verification email sent successfully');
+    });
+
     refreshTokens = asyncHandler(async (req, res) => {
         const refreshToken = req.cookies.refreshToken;
 

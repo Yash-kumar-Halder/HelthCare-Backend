@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { AccessToken } from '../../common/utils/token/access-token.js';
 import bcrypt from 'bcrypt';
 import { UserResponseDTO } from '../user/dto/user-response.dto.js';
@@ -5,6 +6,11 @@ import { RefreshToken } from '../../common/utils/token/refresh-token.js';
 import { Hash } from '../../common/utils/token/hash.js';
 import { SessionModel } from '../session/session.model.js';
 import { ApiError } from '../../common/utils/api/api-error.js';
+import {
+    sendEmail,
+    buildVerificationEmail,
+} from '../../common/utils/email/email.js';
+import { UserModel } from '../user/user.model.js';
 
 export class AuthService {
     constructor(userService, sessionService) {
@@ -14,7 +20,28 @@ export class AuthService {
 
     async register(data, meta = {}) {
         const user = await this.userService.createUser(data);
+
+        await this._generateAndSendVerificationToken(user);
+
         return this._generateAuthResponse(user, meta);
+    }
+
+    async _generateAndSendVerificationToken(user) {
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(rawToken)
+            .digest('hex');
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            varificationToken: hashedToken,
+            varificationTokenExpireAt: new Date(
+                Date.now() + 24 * 60 * 60 * 1000,
+            ),
+        });
+
+        const emailData = buildVerificationEmail(user.email, rawToken);
+        await sendEmail(emailData);
     }
 
     async login({ email, password }, meta = {}) {
@@ -143,6 +170,49 @@ export class AuthService {
 
             refreshToken: newRefreshToken,
         };
+    }
+
+    async verifyEmail(token) {
+        if (!token) {
+            throw ApiError.badRequest('Verification token is required');
+        }
+
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex');
+
+        const user = await UserModel.findOne({
+            varificationToken: hashedToken,
+            varificationTokenExpireAt: { $gt: new Date() },
+        }).select('+varificationToken +varificationTokenExpireAt');
+
+        if (!user) {
+            throw ApiError.badRequest('Invalid or expired verification token');
+        }
+
+        if (user.isVerified) {
+            throw ApiError.badRequest('Email already verified');
+        }
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            isVerified: true,
+            $unset: { varificationToken: '', varificationTokenExpireAt: '' },
+        });
+
+        return true;
+    }
+
+    async resendVerification(userId) {
+        const user = await this.userService.findById(userId);
+
+        if (user.isVerified) {
+            throw ApiError.badRequest('Email already verified');
+        }
+
+        await this._generateAndSendVerificationToken(user);
+
+        return true;
     }
 
     async _generateAuthResponse(user, meta = {}) {
