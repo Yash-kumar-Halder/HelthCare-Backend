@@ -43,6 +43,22 @@ export class UserRepository {
             .populate('role');
     }
 
+    async findAll(filter = {}, options = {}) {
+        const { populate = [], select = '' } = options;
+
+        let query = UserModel.find(filter);
+
+        if (select) {
+            query = query.select(select);
+        }
+
+        populate.forEach((field) => {
+            query = query.populate(field);
+        });
+
+        return await query;
+    }
+
     async findByPhone(phone, options = {}) {
         const { populate = [], select = '' } = options;
 
@@ -64,5 +80,9 @@ export class UserRepository {
             new: true,
             runValidators: true,
         });
+    }
+
+    async deleteById(id) {
+        return await UserModel.findByIdAndDelete(id);
     }
 }
